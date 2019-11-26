@@ -1,0 +1,6 @@
+sensors:
+  outside:
+    file:
+  near_window:
+    file:
+logging.level: info
