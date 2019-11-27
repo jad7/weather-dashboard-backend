@@ -25,11 +25,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Configuration
 public class SensorService {
-
+    private static final RingBufferTimeserial empty = new RingBufferTimeserial(0);
 
     private final ApplicationEventPublisher applicationEventPublisher;
 
@@ -123,8 +124,8 @@ public class SensorService {
             try {
                 final Float val = provider.get();
                 if (val != null) {
-                    System.out.println("Sensor:" + entry.getKey() + " val:" + Utils.round(val));
-                    dataAggregators.get(entry.getKey()).add(val);
+                    log.debug("Sensor {} val: {}", entry.getKey(),  Utils.round(val));
+                    dataAggregators.get(entry.getKey()).add(Instant.now().toEpochMilli(), val);
                     try {
                         timeserialDao.storePoint(entry.getKey(), val);
                     } catch (IOException e) {
@@ -142,4 +143,13 @@ public class SensorService {
     }
 
 
+    public Stream<SensorPoint> getFromBuffer(List<String> sensorsList, Instant from) {
+        Stream<SensorPoint> builder = Stream.empty();
+        for (String s : (sensorsList == null ? sensors.keySet() : sensorsList)) {
+            builder = Stream.concat(builder, dataAggregators.getOrDefault(s, empty).getStreamFrom(from.toEpochMilli())
+                    .map(tp -> new SensorPoint(s, (float) tp.getValue(), Instant.ofEpochMilli(tp.getTime())))
+            );
+        }
+        return builder;
+    }
 }

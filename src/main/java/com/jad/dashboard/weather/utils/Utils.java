@@ -9,4 +9,7 @@ public class Utils {
     public static double roundD(double value) {
         return (double) Math.round(value * 100) / 100;
     }
+    public static float roundF(float value) {
+        return (float) Math.round(value * 100) / 100;
+    }
 }

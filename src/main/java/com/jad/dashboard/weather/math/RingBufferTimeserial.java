@@ -1,8 +1,14 @@
 package com.jad.dashboard.weather.math;
 
+import lombok.Getter;
 import lombok.ToString;
 
+import java.time.Instant;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class RingBufferTimeserial {
 
@@ -42,7 +48,7 @@ public class RingBufferTimeserial {
       if (index < 0) {
          index = ~index;
       }
-      if (index == size) {
+      if (index <= size) {
          return null;
       }
       double max = Double.MIN_VALUE;
@@ -91,7 +97,7 @@ public class RingBufferTimeserial {
       }
       double avg = 0;
       int count = size - index;
-      if (count == 0) {
+      if (count <= 0) {
          return null;
       }
       for (int i = index; i < size; i++) {
@@ -107,8 +113,20 @@ public class RingBufferTimeserial {
       return array[position - 1].value;
    }
 
-   @ToString //For debug
-   private static class TimePoint {
+    public Stream<TimePoint> getStreamFrom(long from) {
+       final int[] index = {findIndex(from)};
+       if (index[0] < 0) {
+          index[0] = ~index[0];
+       }
+       int count = size - index[0];
+       if (count <= 0) {
+          return Stream.empty();
+       }
+       return Stream.generate(() -> array[toIndx(index[0]++)]).limit(count);
+    }
+
+    @ToString @Getter//For debug
+   public static class TimePoint {
       long time;
       double value;
    }

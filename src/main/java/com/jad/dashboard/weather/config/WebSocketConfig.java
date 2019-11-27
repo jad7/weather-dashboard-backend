@@ -17,6 +17,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
 
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(sensorsController, "/sensors/v1/realtime"); //TODO property
+        registry.addHandler(sensorsController, SensorsController.SENSORS_V1 + "realtime"); //TODO property
     }
 }
