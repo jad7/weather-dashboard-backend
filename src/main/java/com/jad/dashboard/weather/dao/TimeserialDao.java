@@ -29,7 +29,6 @@ public class TimeserialDao {
 
     private static final String DELIMITER = "|";
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
-    static DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
 
     @Value("${storage.files.currentDate}")
     private Path currentDateData;
@@ -53,7 +52,7 @@ public class TimeserialDao {
 
     private SensorPoint fromString(String s) {
         final SensorPoint sensorPoint = new SensorPoint();
-        final String[] split = StringUtils.split(s, DELIMITER);
+        final String[] split = StringUtils.tokenizeToStringArray(s, DELIMITER);
         if (split != null && split.length == 3) {
             sensorPoint.setSensorName(split[0]);
             sensorPoint.setTime(Instant.parse(split[1]));
@@ -67,7 +66,7 @@ public class TimeserialDao {
     private String serializeToString(SensorPoint sensorPoint) {
         return sensorPoint.getSensorName()
                 + DELIMITER + sensorPoint.getTime()
-                + Utils.round(sensorPoint.getValue())
+                + DELIMITER + Utils.round(sensorPoint.getValue())
                 + LINE_SEPARATOR;
     }
 
@@ -81,7 +80,7 @@ public class TimeserialDao {
     }
 
     public void recreateCurrentData(List<SensorPoint> last24HPoints) throws IOException {
-        Files.writeString(history, last24HPoints.stream().map(this::serializeToString).collect(Collectors.joining()),
+        Files.writeString(currentDateData, last24HPoints.stream().map(this::serializeToString).collect(Collectors.joining()),
                 TRUNCATE_EXISTING, WRITE);
     }
 }

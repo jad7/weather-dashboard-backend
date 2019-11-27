@@ -1,2 +1,5 @@
 spring.profiles.active: @activatedProperties@
-logging.level: debug
+storage:
+  files:
+    currentDate: ~/current.log
+    history: ~/history.log

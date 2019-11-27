@@ -1,10 +1,12 @@
 package com.jad.dashboard.weather.provider;
 
+import com.jad.dashboard.weather.config.Sensor;
 import com.jad.dashboard.weather.dao.TimeserialDao;
 import com.jad.dashboard.weather.dao.model.SensorPoint;
 import com.jad.dashboard.weather.math.LSFDeDescritisation;
 import com.jad.dashboard.weather.math.Point2D;
 import com.jad.dashboard.weather.math.RingBufferTimeserial;
+import com.jad.dashboard.weather.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -31,41 +33,42 @@ public class SensorService {
 
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    private final Map<String, Supplier<Float>> sensors;
+    private final Map<String, Sensor> sensors;
     private final int intervalSec;
+    private final int intervalHistorySec;
     private final TimeserialDao timeserialDao;
     private final Map<String, RingBufferTimeserial> dataAggregators;
 
     private final ScheduledExecutorService executorService;
 
     public SensorService(ApplicationEventPublisher applicationEventPublisher,
-                         Map<String, Supplier<Float>> sensors,
-                         @Value("${sensors.read.interval.seconds}") int intervalSec,
+                         Map<String, Sensor> sensors,
+                         @Value("${sensors.read.interval.seconds:10}") int intervalSec,
+                         @Value("${sensors.history.interval.seconds:86400}") int intervalHistorySec,
                          TimeserialDao timeserialDao) {
         this.applicationEventPublisher = applicationEventPublisher;
         this.sensors = sensors;
         this.intervalSec = intervalSec;
+        this.intervalHistorySec = intervalHistorySec;
         this.timeserialDao = timeserialDao;
-        int bufferSize = (int) Math.ceil(24d * 3600 / intervalSec * 1.05);
+        int bufferSize = (int) Math.ceil((double) intervalHistorySec / intervalSec * 1.05);
         this.dataAggregators = sensors.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> new RingBufferTimeserial(bufferSize)));
-        this.executorService = Executors.newScheduledThreadPool(2, new CustomizableThreadFactory("sensorLoader"));
+        this.executorService = Executors.newScheduledThreadPool(1, new CustomizableThreadFactory("sensorLoader"));
         init();
     }
 
     public void init() {
         loadLastDay(true);
-        executorService.scheduleAtFixedRate(this::loadPublishData, 0, intervalSec, TimeUnit.SECONDS); //TODO property
-        executorService.scheduleAtFixedRate(() -> loadLastDay(false), 1, 1, TimeUnit.DAYS); //TODO property
+        executorService.scheduleAtFixedRate(this::loadPublishData, 0, intervalSec, TimeUnit.SECONDS);
+        executorService.scheduleAtFixedRate(() -> loadLastDay(false), intervalHistorySec, intervalHistorySec, TimeUnit.SECONDS);
     }
 
-    private void storeHistory() {
-
-    }
 
     private void loadLastDay(boolean loadToRb) {
+        log.debug("Start compaction");
         try {
-            final Instant last24H = Instant.now().minus(1, ChronoUnit.DAYS);
+            final Instant last24H = Instant.now().minus(intervalHistorySec, ChronoUnit.SECONDS);
             List<SensorPoint> forHistory = new ArrayList<>();
             List<SensorPoint> last24HPoints = new ArrayList<>();
             timeserialDao.loadLastDay() //Maybe sort
@@ -96,15 +99,17 @@ public class SensorService {
 
     private List<SensorPoint> convertPoints(List<SensorPoint> forHistory) {
         final long minValue = forHistory.stream().map(SensorPoint::getTime).mapToLong(Instant::toEpochMilli).min().getAsLong();
-        return sensors.keySet().stream().flatMap(name ->
+        final List<SensorPoint> collect = sensors.keySet().stream().flatMap(name ->
                 new LSFDeDescritisation(
-                    forHistory.stream()
-                    .filter(sp -> sp.getSensorName().equals(name))
-                    .map(sp -> new Point2D(sp.getTime().toEpochMilli() - minValue, sp.getValue()))
-                    .iterator() , 0.1)
-                .compute().stream()
-                .map(point2D -> new SensorPoint(name, (float) point2D.getY(), Instant.ofEpochMilli((long) (point2D.getX() + minValue))))
+                        forHistory.stream()
+                                .filter(sp -> sp.getSensorName().equals(name))
+                                .map(sp -> new Point2D(sp.getTime().toEpochMilli() - minValue, sp.getValue()))
+                                .iterator(), 0.1)
+                        .compute().stream()
+                        .map(point2D -> new SensorPoint(name, (float) point2D.getY(), Instant.ofEpochMilli((long) (point2D.getX() + minValue))))
         ).collect(Collectors.toList());
+        log.debug("Compacted {} points to history {} points", forHistory.size(), collect.size());
+        return collect;
     }
 
     @PreDestroy
@@ -113,11 +118,12 @@ public class SensorService {
     }
 
     private void loadPublishData() {
-        for (Map.Entry<String, Supplier<Float>> entry : sensors.entrySet()) {
+        for (Map.Entry<String, Sensor> entry : sensors.entrySet()) {
             final Supplier<Float> provider = entry.getValue();
             try {
                 final Float val = provider.get();
                 if (val != null) {
+                    System.out.println("Sensor:" + entry.getKey() + " val:" + Utils.round(val));
                     dataAggregators.get(entry.getKey()).add(val);
                     try {
                         timeserialDao.storePoint(entry.getKey(), val);

@@ -3,4 +3,4 @@ sensors:
     file:
   near_window:
     file:
-logging.level: info
+logging.level.: INFO

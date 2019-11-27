@@ -1,0 +1,10 @@
+storage:
+  files:
+    currentDate: test_current.log
+    history: test_history.log
+logging.level.com.jad: DEBUG
+sensors:
+  history:
+    interval.seconds: 60
+  read:
+    interval.seconds: 2
