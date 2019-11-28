@@ -15,10 +15,29 @@ import java.nio.file.Path;
 @Configuration
 public class SensorsConfig {
 
-    @Bean
-    @Profile("prod")
-    public Sensor outside(@Value("${sensors.outside.file}") Path pathToFile) {
+    @Bean @Profile("prod")
+    public Sensor outside(@Value("${sensors.files.outside}") Path pathToFile) {
         return getSensor(pathToFile, "outside");
+    }
+
+    @Bean @Profile("prod")
+    public Sensor outside2(@Value("${sensors.files.outside2}") Path pathToFile) {
+        return getSensor(pathToFile, "outside2");
+    }
+
+    @Bean @Profile("prod")
+    public Sensor centerRoom(@Value("${sensors.files.centerRoom}") Path pathToFile) {
+        return getSensor(pathToFile, "centerRoom");
+    }
+
+    @Bean @Profile("prod")
+    public Sensor nearWindow(@Value("${sensors.files.nearWindow}") Path pathToFile) {
+        return getSensor(pathToFile, "nearWindow");
+    }
+
+    @Bean @Profile("humidity")
+    public Sensor humidity(@Value("${sensors.files.humidity}") Path pathToFile) {
+        return getSensor(pathToFile, "humidity");
     }
 
     private Sensor getSensor(Path pathToFile, String name) {

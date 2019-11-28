@@ -2,8 +2,8 @@ package com.jad.dashboard.weather.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jad.dashboard.weather.controller.dto.NamedSensorValue;
 import com.jad.dashboard.weather.controller.dto.SensorValue;
-import com.jad.dashboard.weather.dao.model.NamedSensorPoint;
 import com.jad.dashboard.weather.dao.model.SensorPoint;
 import com.jad.dashboard.weather.provider.SensorEvent;
 import com.jad.dashboard.weather.provider.SensorService;
@@ -68,7 +68,7 @@ public class SensorsController  extends TextWebSocketHandler implements Applicat
     @Override
     public void onApplicationEvent(SensorEvent event) {
         if (event.getSensorValue() != null) {
-            final NamedSensorPoint namedSensorPoint = new NamedSensorPoint();
+            final NamedSensorValue namedSensorPoint = new NamedSensorValue();
             namedSensorPoint.setSensorName(event.getSensorName());
             namedSensorPoint.setValue(Utils.roundF(event.getSensorValue()));
             namedSensorPoint.setTime(Instant.now());

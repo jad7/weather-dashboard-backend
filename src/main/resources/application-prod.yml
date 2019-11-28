@@ -1,6 +1,12 @@
 sensors:
-  outside:
-    file:
-  near_window:
-    file:
+  base.path: /mnt/1wire/
+  default.file: /temperature
+  files:
+    outside: ${sensors.base.path}28.C02B3F010000${sensors.default.file}
+    outside2: ${sensors.base.path}28.2A1A3F010000${sensors.default.file}
+    nearWindow: ${sensors.base.path}28.F0470B010000${sensors.default.file}
+    centerRoom: ${sensors.base.path}10.2EB96C010800${sensors.default.file}
+    humidity: ${sensors.base.path}/humadity
+
 logging.level.: INFO
+

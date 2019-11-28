@@ -58,7 +58,7 @@ public class SensorService {
         int bufferSize = (int) Math.ceil((double) intervalHistorySec / intervalSec * 1.05);
         this.dataAggregators = sensors.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> new RingBufferTimeserial(bufferSize)));
-        this.executorService = Executors.newScheduledThreadPool(1, new CustomizableThreadFactory("sensorLoader"));
+        this.executorService = Executors.newScheduledThreadPool(1, new CustomizableThreadFactory("sensors-loader-"));
         init();
     }
 
