@@ -3,6 +3,7 @@ package com.jad.dashboard.weather.provider;
 import com.jad.dashboard.weather.config.Sensor;
 import com.jad.dashboard.weather.dao.TimeserialDao;
 import com.jad.dashboard.weather.dao.model.SensorPoint;
+import com.jad.dashboard.weather.dao.model.SensorTimeRange;
 import com.jad.dashboard.weather.math.LSFDeDescritisation;
 import com.jad.dashboard.weather.math.Point2D;
 import com.jad.dashboard.weather.math.RingBufferTimeserial;
@@ -18,11 +19,13 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -150,6 +153,41 @@ public class SensorService {
                     .map(tp -> new SensorPoint(s, (float) tp.getValue(), Instant.ofEpochMilli(tp.getTime())))
             );
         }
+        return builder;
+    }
+
+    public Stream<SensorPoint> getDataStream(List<String> sensorsList, long fromEpochMillis, Long toEpochMillis) {
+        final Collection<String> sensors = sensorsList == null ? this.sensors.keySet() : sensorsList;
+        final Map<String, RingBufferTimeserial.MinMax<Long>> minMax = sensors.stream()
+                .collect(Collectors.toMap(Function.identity(), s -> dataAggregators.get(s).timeMinMax()));
+        Stream<SensorPoint> builder = Stream.empty();
+
+        List<SensorTimeRange> historySensTR = new ArrayList<>(this.sensors.size());
+        List<SensorTimeRange> bufferSensTR = new ArrayList<>(this.sensors.size());
+        for (String sensorName : sensors) {
+            final RingBufferTimeserial.MinMax<Long> longMinMax = minMax.get(sensorName);
+            if (longMinMax != null) {
+                if (toEpochMillis > longMinMax.getMin()) {
+                    if (fromEpochMillis < longMinMax.getMin()) {
+                        historySensTR.add(new SensorTimeRange(sensorName, fromEpochMillis, longMinMax.getMin()));
+                        bufferSensTR.add(new SensorTimeRange(sensorName, longMinMax.getMin(), toEpochMillis));
+                    } else {
+                        bufferSensTR.add(new SensorTimeRange(sensorName, fromEpochMillis, toEpochMillis));
+                    }
+                } else {
+                    historySensTR.add(new SensorTimeRange(sensorName, fromEpochMillis, toEpochMillis));
+                }
+            }
+        }
+
+        builder = Stream.concat(builder, timeserialDao.loadHistory(historySensTR));
+        for (SensorTimeRange sensorTimeRange : bufferSensTR) {
+            builder = Stream.concat(builder, dataAggregators.getOrDefault(sensorTimeRange.getName(), empty)
+                    .getStreamFromTo(sensorTimeRange.getFrom(), sensorTimeRange.getTo())
+                    .map(tp -> new SensorPoint(sensorTimeRange.getName(), (float) tp.getValue(), Instant.ofEpochMilli(tp.getTime())))
+            );
+        }
+
         return builder;
     }
 }

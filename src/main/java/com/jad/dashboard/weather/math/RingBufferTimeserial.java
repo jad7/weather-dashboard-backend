@@ -125,6 +125,46 @@ public class RingBufferTimeserial {
        return Stream.generate(() -> array[toIndx(index[0]++)]).limit(count);
     }
 
+   public Stream<TimePoint> getStreamFromTo(long from, long to) {
+      final int[] index = {findIndex(from), findIndex(to)};
+      if (index[0] < 0) {
+         index[0] = ~index[0];
+      }
+      if (index[1] < 0) {
+         index[1] = ~index[1];
+      }
+      int count = index[1] - index[0];
+      if (count <= 0) {
+         return Stream.empty();
+      }
+      return Stream.generate(() -> array[toIndx(index[0]++)]).limit(Math.min(count + 1, size - index[0]));
+   }
+
+   /**
+    * min - oldest, max - newest
+    */
+    public MinMax<Long> timeMinMax() {
+       if (position == 0) {
+          return null;
+       }
+       return new MinMax<>(array[toIndx(0)].time, array[toIndx(size - 1)].time);
+    }
+
+
+
+   @Getter
+   public static class MinMax<T> {
+       private MinMax(T min, T max) {
+          this.min = min;
+          this.max = max;
+       }
+
+       private MinMax() {
+       }
+
+       private T min,max;
+   }
+
     @ToString @Getter//For debug
    public static class TimePoint {
       long time;

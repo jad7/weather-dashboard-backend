@@ -2,6 +2,7 @@ package com.jad.dashboard.weather.dao;
 
 
 import com.jad.dashboard.weather.dao.model.SensorPoint;
+import com.jad.dashboard.weather.dao.model.SensorTimeRange;
 import com.jad.dashboard.weather.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +18,9 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,5 +85,24 @@ public class TimeserialDao {
     public void recreateCurrentData(List<SensorPoint> last24HPoints) throws IOException {
         Files.writeString(currentDateData, last24HPoints.stream().map(this::serializeToString).collect(Collectors.joining()),
                 TRUNCATE_EXISTING, WRITE);
+    }
+
+    public Stream<SensorPoint> loadHistory(List<SensorTimeRange> historySensTR) {
+        final Map<String, SensorTimeRange> dataMap = historySensTR.stream()
+                .collect(Collectors.toMap(SensorTimeRange::getName, Function.identity()));
+        try {
+            return Files.lines(history).map(this::fromString).filter(point -> {
+                if (point == null) return false;
+                final SensorTimeRange sensorTimeRange = dataMap.get(point.getSensorName());
+                if (sensorTimeRange != null) {
+                    final long time = point.getTime().toEpochMilli();
+                    return time >= sensorTimeRange.getFrom() && time <= sensorTimeRange.getTo();
+                }
+                return false;
+            });
+        } catch (IOException e) {
+            log.warn("Can not read history", e);
+            return Stream.empty();
+        }
     }
 }

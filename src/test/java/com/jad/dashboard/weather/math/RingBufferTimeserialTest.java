@@ -3,6 +3,7 @@ package com.jad.dashboard.weather.math;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Set;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
@@ -26,6 +27,29 @@ class RingBufferTimeserialTest {
         for (double i = 3; i < 10; i++) {
             Assertions.assertTrue(set.contains(i));
         }
+        timeserial.timeMinMax();
+
+    }
+
+    @Test
+    void getStreamFromToHP() { //HP - happy pass
+        System.out.println(Instant.now().toEpochMilli());
+        System.out.println(System.currentTimeMillis());
+        final RingBufferTimeserial timeserial = new RingBufferTimeserial(10);
+        for (int i = 0; i < 20; i++) {
+            timeserial.add(i, i);
+        }
+        final Stream<RingBufferTimeserial.TimePoint> streamFrom = timeserial.getStreamFromTo(13, 18);
+        final Set<Double> set = streamFrom.map(RingBufferTimeserial.TimePoint::getValue)
+                .collect(toSet());
+
+        assertEquals(6, set.size());
+        for (double i = 13; i < 19; i++) {
+            Assertions.assertTrue(set.contains(i));
+        }
+        Assertions.assertFalse(set.contains(19d));
+        Assertions.assertFalse(set.contains(20d));
+        timeserial.timeMinMax();
 
     }
 }
