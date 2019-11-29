@@ -103,7 +103,7 @@ public class SensorsController  extends TextWebSocketHandler implements Applicat
         return convertToResult(stream);
     }
 
-    private HashMap<String, List<SensorValue>> convertToResult(Stream<SensorPoint> stream) {
+    private Map<String, List<SensorValue>> convertToResult(Stream<SensorPoint> stream) {
         return stream.reduce(new HashMap<>(), (map, sp) -> {
             map.computeIfAbsent(sp.getSensorName(), k -> new ArrayList<>()).add(new SensorValue(Utils.roundF(sp.getValue()), sp.getTime()));
             return map;

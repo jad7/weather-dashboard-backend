@@ -1,5 +1,5 @@
 spring.profiles.active: @activatedProperties@
 storage:
   files:
-    currentDate: ~/current.log
-    history: ~/history.log
+    currentDate: current.log
+    history: history.log

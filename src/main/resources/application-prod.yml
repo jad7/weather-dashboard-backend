@@ -1,4 +1,8 @@
 sensors:
+  history:
+    interval.seconds: 86400
+  read:
+    interval.seconds: 10
   base.path: /mnt/1wire/
   default.file: /temperature
   files:
@@ -6,7 +10,8 @@ sensors:
     outside2: ${sensors.base.path}28.2A1A3F010000${sensors.default.file}
     nearWindow: ${sensors.base.path}28.F0470B010000${sensors.default.file}
     centerRoom: ${sensors.base.path}10.2EB96C010800${sensors.default.file}
-    humidity: ${sensors.base.path}/humadity
+    unknown: ${sensors.base.path}28.373517010000${sensors.default.file}
+    #humadity: ${sensors.base.path}/humadity
 
 logging.level.: INFO
 

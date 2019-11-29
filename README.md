@@ -1,5 +1,11 @@
 # weather-dashboard-backend
-#### REST API
+### Install and startup
+Minimum requirement - Java 11
+`./mvnw package`
+``
+
+
+### REST API
 ####`/sensors/v1/day` - detail points for the last day
 ##### Params: 
  - sensors  - comma-separated list of sensor name

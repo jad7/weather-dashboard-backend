@@ -3,13 +3,11 @@ package com.jad.dashboard.weather.math;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
 import java.util.Set;
-import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RingBufferTimeserialTest {
 
@@ -33,8 +31,6 @@ class RingBufferTimeserialTest {
 
     @Test
     void getStreamFromToHP() { //HP - happy pass
-        System.out.println(Instant.now().toEpochMilli());
-        System.out.println(System.currentTimeMillis());
         final RingBufferTimeserial timeserial = new RingBufferTimeserial(10);
         for (int i = 0; i < 20; i++) {
             timeserial.add(i, i);

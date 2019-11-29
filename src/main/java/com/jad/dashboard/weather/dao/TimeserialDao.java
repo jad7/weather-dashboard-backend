@@ -9,14 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -74,16 +70,16 @@ public class TimeserialDao {
     }
 
     public void storePoint(String key, Float val) throws IOException {
-        Files.writeString(currentDateData, serializeToString(new SensorPoint(key, val)), CREATE, APPEND);
+        Files.write(currentDateData, serializeToString(new SensorPoint(key, val)).getBytes(), CREATE, APPEND);
     }
 
     public void storeHistory(List<SensorPoint> convertPoints) throws IOException {
-        Files.writeString(history, convertPoints.stream().map(this::serializeToString).collect(Collectors.joining()),
+        Files.write(history, convertPoints.stream().map(this::serializeToString).collect(Collectors.joining()).getBytes(),
                 CREATE, APPEND);
     }
 
     public void recreateCurrentData(List<SensorPoint> last24HPoints) throws IOException {
-        Files.writeString(currentDateData, last24HPoints.stream().map(this::serializeToString).collect(Collectors.joining()),
+        Files.write(currentDateData, last24HPoints.stream().map(this::serializeToString).collect(Collectors.joining()).getBytes(),
                 TRUNCATE_EXISTING, WRITE);
     }
 

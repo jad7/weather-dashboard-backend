@@ -35,9 +35,9 @@ public class SensorsConfig {
         return getSensor(pathToFile, "nearWindow");
     }
 
-    @Bean @Profile("humidity")
-    public Sensor humidity(@Value("${sensors.files.humidity}") Path pathToFile) {
-        return getSensor(pathToFile, "humidity");
+    @Bean @Profile("unknown")
+    public Sensor humidity(@Value("${sensors.files.unknown}") Path pathToFile) {
+        return getSensor(pathToFile, "unknown");
     }
 
     private Sensor getSensor(Path pathToFile, String name) {
