@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class LSFDeDescritisation implements Iterable<Point2D> {
+public class LSFDeDiscretization implements Iterable<Point2D> {
     private final Iterator<Point2D> data;
     private final double minLosFactor;
 
-    public LSFDeDescritisation(Iterator<Point2D> data, double minLosFactor) {
+    public LSFDeDiscretization(Iterator<Point2D> data, double minLosFactor) {
         this.data = data;
         this.minLosFactor = minLosFactor;
     }
@@ -29,11 +29,14 @@ public class LSFDeDescritisation implements Iterable<Point2D> {
 
             while (data.hasNext()) {
                 lsf.addPoint(newPoint = data.next());
-                final LinearCoefficients coefficients = lsf.calc(true);
+                final LinearCoefficients coefficients = lsf.calc(true, true);
                 if (
-                        coefficients.getLoss() > minLosFactor
-                        || coefficients.getMaxDist() > 0.08d
-                      //  || (lastA != null && Math.signum(coefficients.getA()) != Math.signum(lastA))
+                        1 == 0
+                        || coefficients.getLoss() > minLosFactor
+                        //|| coefficients.getLoss() / coefficients.getN() > minLosFactor
+                        //|| (coefficients.getN() > 20 && lastA != null && Math.signum(coefficients.getA()) != Math.signum(lastA))
+                       // || (coefficients.getN() > 3 && coefficients.getDistStatistic().getMax() > minLosFactor)
+                       // || (coefficients.getN() > 2 && coefficients.getDistStatistic().getAverage() > minLosFactor)
                 ) {
                     //res.add(current);
                     //res.add(newPoint);

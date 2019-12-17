@@ -3,6 +3,7 @@ package com.jad.dashboard.weather.math;
 import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
 
 public class LinearLSFDouble {
@@ -55,7 +56,7 @@ public class LinearLSFDouble {
     }
 
     public LinearCoefficients calc(boolean withLoss) {
-        return calc(withLoss, true);
+        return calc(withLoss, false);
     }
 
     public LinearCoefficients calc(boolean withLoss, boolean maxDistance) {
@@ -70,10 +71,10 @@ public class LinearLSFDouble {
             lc.setN(n);
         }
         if (maxDistance) {
-            final double maxDist = points.stream().parallel()
-                    .mapToDouble(p -> Math.abs(-a * p.getX() + p.getY() - b) / Math.sqrt(a * a + b * b))
-                    .max().getAsDouble();
-            lc.setMaxDist(maxDist);
+            final DoubleSummaryStatistics doubleSummaryStatistics = points.stream().parallel()
+                    .mapToDouble(p -> Math.abs(a * p.getX() + b - p.getY()) / Math.sqrt(1 + a * a))
+                    .summaryStatistics();
+            lc.setDistStatistic(doubleSummaryStatistics);
         }
         return lc;
     }

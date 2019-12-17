@@ -66,5 +66,5 @@ For prod:
  - outside2
  - centerRoom
  - nearWindow
- - humidity
+ - unknown
 

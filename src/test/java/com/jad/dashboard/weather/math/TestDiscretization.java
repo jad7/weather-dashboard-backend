@@ -1,27 +1,26 @@
 package com.jad.dashboard.weather.math;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jad.dashboard.weather.dao.TimeserialDao;
+import com.jad.dashboard.weather.dao.model.SensorPoint;
 import lombok.Data;
 import org.knowm.xchart.SwingWrapper;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.XYSeries;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
-
-public class TestDescritization {
+public class TestDiscretization {
     private static final String POINTS = "points";
 
     public static void main(String[] args) {
         List<Point2D> points = readPoints();
-        final LSFDeDescritisation res = new LSFDeDescritisation(points.iterator(), 1d);
+        final LSFDeDiscretization res = new LSFDeDiscretization(points.iterator(), 2d);
 
         final XYChart chart = new XYChartBuilder().width(1400).height(900).title("Area Chart").xAxisTitle("X").yAxisTitle("Y").build();
         List<Double> xData = points.stream().map(Point2D::getX).collect(Collectors.toList());
@@ -43,13 +42,33 @@ public class TestDescritization {
 
     }
 
-    private static List<Point2D> readPoints() {
+    /*private static List<Point2D> readPoints() {
         ObjectMapper om = new ObjectMapper();
         try {
             //List<JPoint> points = om.readValue(new File("/Users/ikrokhmalyov/IdeaProjects/weather/src/test/resources/lsf/outside.json"), new TypeReference<List<JPoint>>() {});
             List<LinearLSFTest.JPoint> points = om.readValue(new File("/Users/ikrokhmalyov/IdeaProjects/weather/src/test/resources/lsf/dataLog.txt"), new TypeReference<List<LinearLSFTest.JPoint>>() {});
             long minDate = points.stream().map(LinearLSFTest.JPoint::getX).mapToLong(Date::getTime).min().getAsLong();
             return points.stream().map(p -> new Point2D(Math.ceil((p.getX().getTime() - minDate)/1000), p.getY())).collect(toList());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }*/
+
+    private static List<Point2D> readPoints() {
+        //final String fileName = "history.log";
+        final String fileName = "current.log";
+        final TimeserialDao timeserialDao = new TimeserialDao(Path.of("/Users/ikrokhmalyov/IdeaProjects/weather", fileName), null);
+        long[] first = new long[1];
+        try {
+            final Stream<SensorPoint> stream = timeserialDao.loadLastDay();
+            return stream
+                    .filter(sp -> sp.getSensorName().equals("outside"))
+                    .map(sp -> {
+                if (first[0] == 0) {
+                    first[0] = sp.getTime().getEpochSecond();
+                }
+                return new Point2D(sp.getTime().toEpochMilli() - first[0], sp.getValue());
+            }).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -29,10 +29,14 @@ public class TimeserialDao {
     private static final String DELIMITER = "|";
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-    @Value("${storage.files.currentDate}")
-    private Path currentDateData;
-    @Value("${storage.files.history}")
-    private Path history;
+    private final Path currentDateData;
+    private final Path history;
+
+    public TimeserialDao(@Value("${storage.files.currentDate}") Path currentDateData,
+                         @Value("${storage.files.history}") Path history) {
+        this.currentDateData = currentDateData;
+        this.history = history;
+    }
 
     public Stream<SensorPoint> loadLastDay() throws IOException {
         if (Files.isReadable(currentDateData)) {

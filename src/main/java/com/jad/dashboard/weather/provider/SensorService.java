@@ -4,7 +4,7 @@ import com.jad.dashboard.weather.config.Sensor;
 import com.jad.dashboard.weather.dao.TimeserialDao;
 import com.jad.dashboard.weather.dao.model.SensorPoint;
 import com.jad.dashboard.weather.dao.model.SensorTimeRange;
-import com.jad.dashboard.weather.math.LSFDeDescritisation;
+import com.jad.dashboard.weather.math.LSFDeDiscretization;
 import com.jad.dashboard.weather.math.Point2D;
 import com.jad.dashboard.weather.math.RingBufferTimeserial;
 import com.jad.dashboard.weather.utils.Utils;
@@ -40,6 +40,7 @@ public class SensorService {
     private final Map<String, Sensor> sensors;
     private final int intervalSec;
     private final int intervalHistorySec;
+    private final double minLossFactor;
     private final TimeserialDao timeserialDao;
     private final Map<String, RingBufferTimeserial> dataAggregators;
 
@@ -49,11 +50,13 @@ public class SensorService {
                          Map<String, Sensor> sensors,
                          @Value("${sensors.read.interval.seconds:10}") int intervalSec,
                          @Value("${sensors.history.interval.seconds:86400}") int intervalHistorySec,
+                         @Value("${sensors.history.lsf.minLos:0.1}") double minLossFactor,
                          TimeserialDao timeserialDao) {
         this.applicationEventPublisher = applicationEventPublisher;
         this.sensors = sensors;
         this.intervalSec = intervalSec;
         this.intervalHistorySec = intervalHistorySec;
+        this.minLossFactor = minLossFactor;
         this.timeserialDao = timeserialDao;
         int bufferSize = (int) Math.ceil((double) intervalHistorySec / intervalSec * 1.05);
         this.dataAggregators = sensors.entrySet().stream()
@@ -104,11 +107,11 @@ public class SensorService {
     private List<SensorPoint> convertPoints(List<SensorPoint> forHistory) {
         final long minValue = forHistory.stream().map(SensorPoint::getTime).mapToLong(Instant::toEpochMilli).min().getAsLong();
         final List<SensorPoint> collect = sensors.keySet().stream().flatMap(name ->
-                new LSFDeDescritisation(
+                new LSFDeDiscretization(
                         forHistory.stream()
                                 .filter(sp -> sp.getSensorName().equals(name))
                                 .map(sp -> new Point2D(sp.getTime().toEpochMilli() - minValue, sp.getValue()))
-                                .iterator(), 0.1)
+                                .iterator(), minLossFactor)
                         .compute().stream()
                         .map(point2D -> new SensorPoint(name, (float) point2D.getY(), Instant.ofEpochMilli((long) (point2D.getX() + minValue))))
         ).collect(Collectors.toList());

@@ -5,6 +5,8 @@ storage:
 logging.level.com.jad: DEBUG
 sensors:
   history:
+    lsf:
+      minLos: 2
     interval.seconds: 60
   read:
     interval.seconds: 2

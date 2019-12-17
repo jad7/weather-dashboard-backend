@@ -1,5 +1,7 @@
 sensors:
   history:
+    lsf:
+      minLos: 2
     interval.seconds: 86400
   read:
     interval.seconds: 10
