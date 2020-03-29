@@ -4,7 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
-import org.knowm.xchart.*;
+import org.knowm.xchart.SwingWrapper;
+import org.knowm.xchart.XYChart;
+import org.knowm.xchart.XYChartBuilder;
+import org.knowm.xchart.XYSeries;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,11 +119,12 @@ class LinearLSFTest {
 
 
             linearLSF.addPoint(point);
-            LinearCoefficients calc1 = linearLSF.calc(true);
+            LinearCoefficients calc1 = linearLSF.calc(true, true);
             System.out.println("New point res:" + calc1
                     + "; Dif A:" + (Math.abs(calc.getA() - calc1.getA()))
                     + "; Dif B:" + (Math.abs(calc.getB() - calc1.getB()))
-                    + "; Loss:" + calc1.getLoss()/calc1.getN()
+                    + "; Loss:" + calc1.getLoss()
+                    + "; Loss/N:" + calc1.getLoss()/calc1.getN()
             );
 
             data = buildLine(calc1, xData.get(0), xData.get(xData.size() - 1));

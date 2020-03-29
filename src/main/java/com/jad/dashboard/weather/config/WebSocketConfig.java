@@ -18,8 +18,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(sensorsController, SensorsController.SENSORS_V1 + "realtime")
-            .setAllowedOrigins("http://localhost:3000/")
+            .setAllowedOrigins("*")
         ;
-        //TODO property
     }
 }

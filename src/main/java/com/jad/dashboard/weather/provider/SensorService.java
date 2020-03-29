@@ -61,7 +61,7 @@ public class SensorService {
         int bufferSize = (int) Math.ceil((double) intervalHistorySec / intervalSec * 1.05);
         this.dataAggregators = sensors.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> new RingBufferTimeserial(bufferSize)));
-        this.executorService = Executors.newScheduledThreadPool(1, new CustomizableThreadFactory("sensors-loader-"));
+        this.executorService = Executors.newSingleThreadScheduledExecutor(new CustomizableThreadFactory("sensors-loader-"));
         init();
     }
 
@@ -111,8 +111,8 @@ public class SensorService {
                         forHistory.stream()
                                 .filter(sp -> sp.getSensorName().equals(name))
                                 .map(sp -> new Point2D(sp.getTime().toEpochMilli() - minValue, sp.getValue()))
-                                .iterator(), minLossFactor)
-                        .compute().stream()
+                                .iterator())
+                        .compute(minLossFactor).stream()
                         .map(point2D -> new SensorPoint(name, (float) point2D.getY(), Instant.ofEpochMilli((long) (point2D.getX() + minValue))))
         ).collect(Collectors.toList());
         log.debug("Compacted {} points to history {} points", forHistory.size(), collect.size());

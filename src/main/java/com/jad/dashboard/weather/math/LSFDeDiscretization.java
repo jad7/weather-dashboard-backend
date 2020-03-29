@@ -3,38 +3,45 @@ package com.jad.dashboard.weather.math;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.BiPredicate;
 
-public class LSFDeDiscretization implements Iterable<Point2D> {
+public class LSFDeDiscretization {
     private final Iterator<Point2D> data;
-    private final double minLosFactor;
 
-    public LSFDeDiscretization(Iterator<Point2D> data, double minLosFactor) {
+    public LSFDeDiscretization(Iterator<Point2D> data) {
         this.data = data;
-        this.minLosFactor = minLosFactor;
     }
 
-    public List<Point2D> compute() {
+    public List<Point2D> compute(double minLossFactor) {
+        return compute(defaultMinLossCondition(minLossFactor));
+    }
+
+    public List<Point2D> compute(BiPredicate<LinearCoefficients, Double> stopCondition) {
+        Objects.requireNonNull(stopCondition);
         final List<Point2D> res = new ArrayList<>();
         LinearLSFDouble lsf = new LinearLSFDouble();
+        Point2D current;
+        Point2D newPoint;
         if (data.hasNext()) {
-            lsf.addPoint(data.next());
+            lsf.addPoint(current = data.next());
             res.add(lsf.getFirst());
-            Point2D current;
-            Point2D newPoint;
+
             if (!data.hasNext()) {
                 return res;
             }
-            lsf.addPoint(current = data.next());
+            //lsf.addPoint(current = data.next());
             Double lastA = null;
 
             while (data.hasNext()) {
                 lsf.addPoint(newPoint = data.next());
-                final LinearCoefficients coefficients = lsf.calc(true, true);
+                final LinearCoefficients coefficients = lsf.calc(true, false);
                 if (
                         1 == 0
-                        || coefficients.getLoss() > minLosFactor
-                        //|| coefficients.getLoss() / coefficients.getN() > minLosFactor
-                        //|| (coefficients.getN() > 20 && lastA != null && Math.signum(coefficients.getA()) != Math.signum(lastA))
+                        || stopCondition.test(coefficients, lastA)
+                        //|| coefficients.getLoss() > minLosFactor
+                        //|| coefficients.getN() >= 3 && coefficients.getLoss() / coefficients.getN() > minLosFactor
+                       // || (coefficients.getN() > 3 && lastA != null && Math.signum(coefficients.getA()) != Math.signum(lastA))
                        // || (coefficients.getN() > 3 && coefficients.getDistStatistic().getMax() > minLosFactor)
                        // || (coefficients.getN() > 2 && coefficients.getDistStatistic().getAverage() > minLosFactor)
                 ) {
@@ -42,8 +49,9 @@ public class LSFDeDiscretization implements Iterable<Point2D> {
                     //res.add(newPoint);
                     res.add(new Point2D(current.getX(), coefficients.getA()*current.getX() + coefficients.getB()));
                     lsf = new LinearLSFDouble();
-                    lastA = null;
+                    lsf.addPoint(current);
                     lsf.addPoint(newPoint);
+                    lastA = lsf.calc(false).getA();
                 } else {
                     current = newPoint;
                     lastA = coefficients.getA();
@@ -57,9 +65,10 @@ public class LSFDeDiscretization implements Iterable<Point2D> {
 
     }
 
-    @Override
-    public Iterator<Point2D> iterator() {
-        return compute().iterator();
+
+
+    public static BiPredicate<LinearCoefficients, Double> defaultMinLossCondition(double minLoss) {
+        return (coefficients, lastA) -> coefficients.getLoss() > minLoss;
     }
 
 

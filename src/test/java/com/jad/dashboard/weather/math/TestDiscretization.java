@@ -20,7 +20,7 @@ public class TestDiscretization {
 
     public static void main(String[] args) {
         List<Point2D> points = readPoints();
-        final LSFDeDiscretization res = new LSFDeDiscretization(points.iterator(), 2d);
+        final LSFDeDiscretization res = new LSFDeDiscretization(points.iterator());
 
         final XYChart chart = new XYChartBuilder().width(1400).height(900).title("Area Chart").xAxisTitle("X").yAxisTitle("Y").build();
         List<Double> xData = points.stream().map(Point2D::getX).collect(Collectors.toList());
@@ -29,12 +29,19 @@ public class TestDiscretization {
         XYSeries pointsSeries = chart.addSeries(POINTS, xData, yData);
         pointsSeries.setXYSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Scatter);
 
-        final List<Point2D> compute = res.compute();
-        System.out.println("From: " + points.size() + " to:" + compute.size());
+        final List<Point2D> compute = res.compute(0.1d);
+        LSFDeDiscretization res2 = new LSFDeDiscretization(compute.iterator());
+        List<Point2D> compute2 = res2.compute(LSFDeDiscretization.defaultMinLossCondition(0.5d).or((coef,lastA) -> lastA != null && Math.abs(Math.atan(coef.getA() - lastA)) < Math.PI/36));
+        System.out.println("1: From: " + points.size() + " to:" + compute.size());
+        System.out.println("2: From: " + compute.size() + " to:" + compute2.size());
         List<Double> xLine = compute.stream().map(Point2D::getX).collect(Collectors.toList());
+        List<Double> xLine2 = compute2.stream().map(Point2D::getX).collect(Collectors.toList());
         List<Double> yLine = compute.stream().map(Point2D::getY).collect(Collectors.toList());
+        List<Double> yLine2 = compute2.stream().map(Point2D::getY).collect(Collectors.toList());
         XYSeries lsf = chart.addSeries("LSF", xLine, yLine);
+        XYSeries lsf2 = chart.addSeries("LSF2", xLine2, yLine2);
         lsf.setXYSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Line);
+        lsf2.setXYSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Line);
 
         SwingWrapper<XYChart> swingWrapper = new SwingWrapper<>(chart);
         swingWrapper.displayChart();
